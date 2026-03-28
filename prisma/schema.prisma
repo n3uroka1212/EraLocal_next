@@ -1,0 +1,510 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ───────────────────────────────────
+
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+enum PlanType {
+  free
+  premium
+}
+
+enum BusinessType {
+  commercant
+  activite
+}
+
+enum EmployeeRole {
+  employee
+  manager
+}
+
+enum OrderStatus {
+  pending
+  paid
+  preparing
+  ready
+  collected
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+  refunded
+}
+
+enum FavoriteItemType {
+  shop
+  product
+  event
+  activity
+}
+
+enum PingStatus {
+  pending
+  responded
+  expired
+}
+
+// ─── MODELES ─────────────────────────────────
+
+model Shop {
+  id                       Int                @id @default(autoincrement())
+  name                     String
+  email                    String             @unique
+  passwordHash             String             @map("password_hash")
+  slug                     String             @unique
+
+  // Verification
+  verificationStatus       VerificationStatus @default(pending) @map("verification_status")
+  verificationDate         DateTime?          @map("verification_date")
+  verificationReason       String?            @map("verification_reason")
+
+  // Coordonnees
+  address                  String?
+  city                     String?
+  postalCode               String?            @map("postal_code")
+  phone                    String?
+  notificationEmail        String?            @map("notification_email")
+  latitude                 Float?
+  longitude                Float?
+
+  // Profil
+  description              String?
+  openingHours             Json?              @map("opening_hours")
+  siret                    String?
+  category                 String?
+  website                  String?
+  socialMedia              Json?              @map("social_media")
+  businessType             BusinessType       @default(commercant) @map("business_type")
+  onboardingComplete       Boolean            @default(false) @map("onboarding_complete")
+
+  // Images
+  logo                     String?
+  logoEmoji                String?            @map("logo_emoji")
+  banner                   String?
+  coverImage               String?            @map("cover_image")
+
+  // Documents verification
+  docIdRecto               String?            @map("doc_id_recto")
+  docIdVerso               String?            @map("doc_id_verso")
+  docJustificatif          String?            @map("doc_justificatif")
+  docKbis                  String?            @map("doc_kbis")
+
+  // SIRET API
+  siretVerified            Boolean            @default(false) @map("siret_verified")
+  siretApiName             String?            @map("siret_api_name")
+  siretApiAddress          String?            @map("siret_api_address")
+
+  // Plan
+  planType                 PlanType           @default(free) @map("plan_type")
+  planExpires              DateTime?          @map("plan_expires")
+  showStockPublic          Boolean            @default(false) @map("show_stock_public")
+
+  // Click & Collect
+  clickCollectEnabled      Boolean            @default(false) @map("click_collect_enabled")
+  stripeAccountId          String?            @map("stripe_account_id")
+  stripeOnboardingComplete Boolean            @default(false) @map("stripe_onboarding_complete")
+  ccPrepTime               Int?               @map("cc_prep_time")
+  ccInstructions           String?            @map("cc_instructions")
+  ccMinOrder               Float?             @map("cc_min_order")
+  ccCommissionRate         Float?             @map("cc_commission_rate")
+
+  // 2FA
+  totpSecret               String?            @map("totp_secret")
+  totpEnabled              Boolean            @default(false) @map("totp_enabled")
+
+  // Pings
+  pingEnabled              Boolean            @default(false) @map("ping_enabled")
+
+  // PIN proprietaire
+  ownerPinHash             String?            @map("owner_pin_hash")
+
+  createdAt                DateTime           @default(now()) @map("created_at")
+
+  // Relations
+  employees                Employee[]
+  products                 Product[]
+  catalogProducts          CatalogProduct[]
+  orders                   Order[]
+  events                   ShopEvent[]
+  activities               ShopActivity[]
+  activityFolders          ActivityFolder[]
+  stockPings               StockPing[]
+  photos                   ShopPhoto[]
+  clientNotifications      ClientNotification[]
+
+  @@map("shops")
+}
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("admins")
+}
+
+model Employee {
+  id                   Int          @id @default(autoincrement())
+  shopId               Int          @map("shop_id")
+  name                 String
+  email                String
+  passwordHash         String       @map("password_hash")
+  pinHash              String?      @map("pin_hash")
+  role                 EmployeeRole @default(employee)
+
+  // Permissions
+  permStockView        Boolean      @default(false) @map("perm_stock_view")
+  permStockEdit        Boolean      @default(false) @map("perm_stock_edit")
+  permScanFacture      Boolean      @default(false) @map("perm_scan_facture")
+  permScanTicket       Boolean      @default(false) @map("perm_scan_ticket")
+  permAlertsView       Boolean      @default(false) @map("perm_alerts_view")
+  permSettingsView     Boolean      @default(false) @map("perm_settings_view")
+  permEmployeesManage  Boolean      @default(false) @map("perm_employees_manage")
+  permShopEdit         Boolean      @default(false) @map("perm_shop_edit")
+
+  active               Boolean      @default(true)
+  totpSecret           String?      @map("totp_secret")
+  totpEnabled          Boolean      @default(false) @map("totp_enabled")
+  createdAt            DateTime     @default(now()) @map("created_at")
+
+  shop                 Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("employees")
+}
+
+model Client {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  name         String?
+  phone        String?
+  city         String?
+  lastLogin    DateTime? @map("last_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  favorites     ClientFavorite[]
+  notifications ClientNotification[]
+  orders        Order[]
+  pings         StockPing[]
+
+  @@map("clients")
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  shopId      Int       @map("shop_id")
+  name        String
+  quantity    Float     @default(0)
+  unit        String?
+  price       Float?
+  category    String?
+  minStock    Int?      @map("min_stock")
+  expiryDate  DateTime? @map("expiry_date")
+  barcode     String?
+  supplier    String?
+  description String?
+  image       String?
+  lastUpdated DateTime  @default(now()) @map("last_updated")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  shop            Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  catalogProducts CatalogProduct[]
+  pings           StockPing[]
+
+  @@map("products")
+}
+
+model CatalogProduct {
+  id              Int      @id @default(autoincrement())
+  shopId          Int      @map("shop_id")
+  name            String
+  description     String?
+  price           Float?
+  priceUnit       String?  @map("price_unit")
+  category        String?
+  image           String?
+  available       Boolean  @default(true)
+  sortOrder       Int      @default(0) @map("sort_order")
+  linkedProductId Int?     @map("linked_product_id")
+  parentProductId Int?     @map("parent_product_id")
+  variantSourceName String? @map("variant_source_name")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  shop          Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  linkedProduct Product?         @relation(fields: [linkedProductId], references: [id], onDelete: SetNull)
+  variants      CatalogVariant[]
+  orderItems    OrderItem[]
+
+  @@map("catalog_products")
+}
+
+model CatalogVariant {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  name      String
+  price     Float?
+  available Boolean  @default(true)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product    CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@map("catalog_variants")
+}
+
+model Order {
+  id                    Int           @id @default(autoincrement())
+  orderNumber           String        @unique @map("order_number")
+  shopId                Int           @map("shop_id")
+  clientId              Int?          @map("client_id")
+  status                OrderStatus   @default(pending)
+  subtotal              Float
+  platformFee           Float         @default(0) @map("platform_fee")
+  total                 Float
+  stripePaymentIntentId String?       @map("stripe_payment_intent_id")
+  stripeChargeId        String?       @map("stripe_charge_id")
+  paymentStatus         PaymentStatus @default(pending) @map("payment_status")
+  clientName            String?       @map("client_name")
+  clientEmail           String?       @map("client_email")
+  clientPhone           String?       @map("client_phone")
+  pickupTime            DateTime?     @map("pickup_time")
+  notes                 String?
+  cancelledBy           String?       @map("cancelled_by")
+  cancelReason          String?       @map("cancel_reason")
+  readyAt               DateTime?     @map("ready_at")
+  collectedAt           DateTime?     @map("collected_at")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  shop   Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  client Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  items  OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id               Int      @id @default(autoincrement())
+  orderId          Int      @map("order_id")
+  catalogProductId Int?     @map("catalog_product_id")
+  variantId        Int?     @map("variant_id")
+  productName      String   @map("product_name")
+  variantName      String?  @map("variant_name")
+  quantity         Int
+  unitPrice        Float    @map("unit_price")
+  totalPrice       Float    @map("total_price")
+
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  catalogProduct CatalogProduct? @relation(fields: [catalogProductId], references: [id], onDelete: SetNull)
+  variant        CatalogVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@map("order_items")
+}
+
+model ShopEvent {
+  id            Int       @id @default(autoincrement())
+  shopId        Int       @map("shop_id")
+  title         String
+  description   String?
+  eventType     String?   @map("event_type")
+  eventDate     DateTime? @map("event_date")
+  eventTime     String?   @map("event_time")
+  endTime       String?   @map("end_time")
+  address       String?
+  isRecurring   Boolean   @default(false) @map("is_recurring")
+  recurringDay  String?   @map("recurring_day")
+  recurringDays String?   @map("recurring_days")
+  active        Boolean   @default(true)
+  phone         String?
+  website       String?
+  isPrivate     Boolean   @default(false) @map("is_private")
+  privateCode   String?   @map("private_code")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("shop_events")
+}
+
+model ShopActivity {
+  id          Int      @id @default(autoincrement())
+  shopId      Int      @map("shop_id")
+  name        String
+  description String?
+  category    String?
+  address     String?
+  latitude    Float?
+  longitude   Float?
+  phone       String?
+  website     String?
+  priceInfo   String?  @map("price_info")
+  duration    String?
+  mainImage   String?  @map("main_image")
+  images      Json?    @default("[]")
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0) @map("sort_order")
+  folderId    Int?     @map("folder_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  shop   Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  folder ActivityFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@map("shop_activities")
+}
+
+model ActivityFolder {
+  id          Int      @id @default(autoincrement())
+  shopId      Int      @map("shop_id")
+  name        String
+  code        String?
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  shop       Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  activities ShopActivity[]
+
+  @@map("activity_folders")
+}
+
+model ClientFavorite {
+  id        Int              @id @default(autoincrement())
+  clientId  Int              @map("client_id")
+  itemType  FavoriteItemType @map("item_type")
+  itemId    Int              @map("item_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, itemType, itemId])
+  @@map("client_favorites")
+}
+
+model ClientNotification {
+  id        Int      @id @default(autoincrement())
+  clientId  Int      @map("client_id")
+  shopId    Int?     @map("shop_id")
+  type      String
+  title     String
+  message   String?
+  targetId  Int?     @map("target_id")
+  shopName  String?  @map("shop_name")
+  shopLogo  String?  @map("shop_logo")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  shop   Shop?  @relation(fields: [shopId], references: [id], onDelete: SetNull)
+
+  @@map("client_notifications")
+}
+
+model StockPing {
+  id           Int        @id @default(autoincrement())
+  shopId       Int        @map("shop_id")
+  productId    Int?       @map("product_id")
+  productName  String     @map("product_name")
+  productImage String?    @map("product_image")
+  clientId     Int?       @map("client_id")
+  status       PingStatus @default(pending)
+  response     String?
+  createdAt    DateTime   @default(now()) @map("created_at")
+  respondedAt  DateTime?  @map("responded_at")
+
+  shop    Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  client  Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@map("stock_pings")
+}
+
+model ShopPhoto {
+  id        Int      @id @default(autoincrement())
+  shopId    Int      @map("shop_id")
+  url       String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("shop_photos")
+}
+
+model AnalyticsEvent {
+  id          Int      @id @default(autoincrement())
+  eventType   String   @map("event_type")
+  targetType  String?  @map("target_type")
+  targetId    Int?     @map("target_id")
+  targetName  String?  @map("target_name")
+  searchQuery String?  @map("search_query")
+  sessionId   String?  @map("session_id")
+  clientId    Int?     @map("client_id")
+  userAgent   String?  @map("user_agent")
+  referrer    String?
+  extra       Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([eventType, createdAt])
+  @@index([targetType, targetId])
+  @@map("analytics_events")
+}
+
+model CityAccount {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  contactName  String?  @map("contact_name")
+  phone        String?
+  department   String?
+  region       String?
+  active       Boolean  @default(true)
+  description  String?
+  banner       String?
+  logo         String?
+  logoEmoji    String?  @map("logo_emoji")
+  slogan       String?
+  cityCategory String?  @map("city_category")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  points CityPoint[]
+
+  @@map("city_accounts")
+}
+
+model CityPoint {
+  id          Int      @id @default(autoincrement())
+  cityId      Int      @map("city_id")
+  name        String
+  description String?
+  history     String?
+  address     String?
+  category    String?
+  image       String?
+  latitude    Float?
+  longitude   Float?
+  sortOrder   Int      @default(0) @map("sort_order")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  city CityAccount @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@map("city_points")
+}
