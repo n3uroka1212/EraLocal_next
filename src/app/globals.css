@@ -1,26 +1,282 @@
 @import "tailwindcss";
 
+/* ============================================
+   EraLocal Design System — CSS Custom Properties
+   Source: AnalyseUIUX.md
+   ============================================ */
+
+/* --- Google Fonts --- */
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap");
+
+/* --- Theme: Light (default) --- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg: #f2ede6;
+  --bg2: #fdfcfa;
+  --bg3: #ede8e0;
+  --bg4: #e0d9d0;
+
+  /* Texts */
+  --text: #1e1a16;
+  --text2: #8a7f74;
+  --text3: #bdb5ac;
+  --muted: #8a7f74;
+
+  /* Accents */
+  --terra: #b85c38;
+  --terra-light: #edd5c8;
+  --terra-mid: #d4804f;
+  --accent: #b85c38;
+  --accent-light: #edd5c8;
+  --accent-hover: #a04f2e;
+
+  /* Status */
+  --green: #4a6b58;
+  --green-light: #d4e5dc;
+  --sage: #4a6b58;
+  --sage-light: #c8dace;
+  --red: #c04020;
+  --red-light: #fddad1;
+  --orange: #c68b38;
+  --orange-light: #fef3c7;
+
+  /* Special */
+  --cyan: #4d9bab;
+  --purple: #8b72aa;
+  --pink: #b86988;
+
+  /* Structure */
+  --border: #e0d9d0;
+  --white: #fdfcfa;
+  --radius: 16px;
+  --nav-h: 64px;
+
+  /* Shadows */
+  --shadow: 0 1px 3px rgba(30, 26, 22, 0.04),
+    0 4px 12px rgba(30, 26, 22, 0.03);
+  --shadow-lg: 0 8px 24px rgba(30, 26, 22, 0.08);
+  --dark-overlay: linear-gradient(
+    to bottom,
+    rgba(20, 14, 8, 0.05) 0%,
+    rgba(20, 14, 8, 0.18) 60%,
+    rgba(20, 14, 8, 0.45) 100%
+  );
 }
 
+/* --- Theme: Dark --- */
+.dark {
+  --bg: #181512;
+  --bg2: #1e1a16;
+  --bg3: #252120;
+  --bg4: #302a26;
+
+  --text: #e8e4df;
+  --text2: #a9a196;
+  --text3: #6b635a;
+  --muted: #8a8078;
+
+  --terra: #c76b4a;
+  --terra-light: #3d2e28;
+  --terra-mid: #d4804f;
+  --accent: #c76b4a;
+  --accent-light: #3d2e28;
+  --accent-hover: #d4804f;
+
+  --green: #6b9b7a;
+  --green-light: #2a3d32;
+  --red: #d45a3a;
+  --red-light: #3d2520;
+  --orange: #d4954a;
+  --orange-light: #3d3020;
+
+  --cyan: #5aafbf;
+  --purple: #a088c0;
+  --sage: #6b9b7a;
+
+  --border: #3a3530;
+  --white: #1e1a16;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --dark-overlay: linear-gradient(
+    to bottom,
+    rgba(10, 8, 6, 0.08) 0%,
+    rgba(10, 8, 6, 0.25) 60%,
+    rgba(10, 8, 6, 0.55) 100%
+  );
+}
+
+/* --- Tailwind theme inline --- */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg2);
+  --color-bg3: var(--bg3);
+  --color-bg4: var(--bg4);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-text3: var(--text3);
+  --color-muted: var(--muted);
+  --color-terra: var(--terra);
+  --color-terra-light: var(--terra-light);
+  --color-terra-mid: var(--terra-mid);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-hover: var(--accent-hover);
+  --color-green: var(--green);
+  --color-green-light: var(--green-light);
+  --color-red: var(--red);
+  --color-red-light: var(--red-light);
+  --color-orange: var(--orange);
+  --color-orange-light: var(--orange-light);
+  --color-cyan: var(--cyan);
+  --color-purple: var(--purple);
+  --color-pink: var(--pink);
+  --color-border: var(--border);
+  --color-white: var(--white);
+
+  --font-sans: "Outfit", "DM Sans", "Inter", system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+
+  --radius-pill: 20px;
+  --radius-sheet: 24px;
+  --radius-modal: 20px;
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-input: 10px;
+  --radius-tab: 8px;
+  --radius-small: 6px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* --- Base --- */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Outfit", "DM Sans", "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Keyframes --- */
+@keyframes searchGlow {
+  0%,
+  100% {
+    box-shadow: 0 2px 12px rgba(199, 107, 74, 0.12),
+      inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 4px 24px rgba(199, 107, 74, 0.28),
+      inset 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes imgShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes notifPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes userPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(184, 92, 56, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(184, 92, 56, 0);
+  }
+}
+
+@keyframes shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* --- Scrollbar custom --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text3);
 }

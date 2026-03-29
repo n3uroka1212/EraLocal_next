@@ -4,3 +4,6 @@ node_modules
 *.md
 .env*
 !.env.example
+playwright.config.ts
+e2e
+scripts

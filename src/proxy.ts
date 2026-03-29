@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRouteAuth, SESSION_COOKIE } from "@/lib/auth/proxy-auth";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -6,6 +7,25 @@ export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = !isProduction;
 
+  // --- Auth check ---
+  const pathname = request.nextUrl.pathname;
+  const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value;
+  const authResult = checkRouteAuth(pathname, sessionCookie);
+
+  if (authResult.needsAuth) {
+    if ("forbidden" in authResult) {
+      // Wrong user type → 403
+      return NextResponse.rewrite(new URL("/forbidden", request.url), {
+        status: 403,
+      });
+    }
+    // Not authenticated → redirect to login
+    const loginUrl = new URL(authResult.redirectTo, request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // --- CSP & security headers ---
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com${isDev ? " 'unsafe-eval'" : ""};
@@ -26,6 +46,14 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", cspHeader);
+
+  // Pass session info to Server Components via headers
+  if (authResult.session) {
+    requestHeaders.set(
+      "x-session",
+      JSON.stringify(authResult.session),
+    );
+  }
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
